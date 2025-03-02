@@ -7,6 +7,7 @@ import Foundation
 struct Main {
     static func main() async {
         print("Start...")
+        
         let martingaleActor = MartingaleActor()
         _ = await martingaleActor.startSystem(tradeId: "", vwapStartTime: Date())
     }
