@@ -3,6 +3,7 @@ import Foundation
 
 actor MartingaleActor {
     private var bingxApi: BingxApiController?
+    private let indicatorCalculator = IndicatorCalculatorController()
 
     public func startSystem(symbol: String, vwapStartTime: Date) -> String {
         let vwapStartTimestamp = Int(vwapStartTime.timeIntervalSince1970 * 1000)
@@ -41,8 +42,7 @@ actor MartingaleActor {
         
         let atr5mCandles = minInterval == "5m" ? candlesMinInterval : bingxApi.getCandles(symbol: symbol, limit: 20, interval: "5m")
         
-        
-        
+        let atr = indicatorCalculator.calculateAtr(for: atr5mCandles)        
         
         
         return "aaa"
