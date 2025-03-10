@@ -50,5 +50,44 @@ public class BingxApiController {
         return nil
     }
 
+    func getCandles(symbol: String, since: Int, limit: Int = 1000, timeframe: String = "1m") -> [Candle] {
+        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+        let params = PythonObject(["timestamp": timestamp])
+
+        let pySymbol = PythonObject(symbol)
+        let pySince = PythonObject(since)
+        let pyTimeframe = PythonObject(timeframe)
+        let pyLimit = PythonObject(limit)
+        
+        let exchangeResponse = exchange.fetchOHLCV(symbol: pySymbol, timeframe: pyTimeframe, since: pySince, limit: pyLimit, params: params)
+        
+        do {
+            let jsonString = Python.import("json").dumps(exchangeResponse)
+            
+            if let jsonData = jsonString.description.data(using: .utf8) {
+                // Decode JSON as an array of arrays, then map it to Candle structs
+                let rawCandles = try JSONDecoder().decode([[Double]].self, from: jsonData)
+
+                let candles = rawCandles.map { array -> Candle in
+                    return Candle(
+                        timestamp: Int(array[0]),
+                        open: array[1],
+                        high: array[2],
+                        low: array[3],
+                        close: array[4],
+                        volume: array[5]
+                    )
+                }
+
+                return candles
+            } else {
+                print("Failed to convert JSON string to Data: getCandles")
+            }
+        } catch {
+            print("error on getCandles(): Error: \(error)")
+        }
+        
+        return []
+    }
 
 }

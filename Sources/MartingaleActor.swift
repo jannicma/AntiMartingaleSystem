@@ -18,6 +18,9 @@ actor MartingaleActor {
         }
         
         let avgPrice = trade.info.avgPrice
+        
+        // calculate lowest possible timeframe to get all data (max 1000)
+        let candles: [Candle] = bingxApi.getCandles(symbol: symbol, since: vwapStartTimestamp)
 
         return "aaa"
     }
