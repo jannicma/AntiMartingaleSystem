@@ -50,13 +50,13 @@ public class BingxApiController {
         return nil
     }
 
-    func getCandles(symbol: String, since: Int, limit: Int = 1000, timeframe: String = "1m") -> [Candle] {
+    func getCandles(symbol: String, since: Int? = nil, limit: Int = 1000, interval: String = "1m") -> [Candle] {
         let timestamp = Int(Date().timeIntervalSince1970 * 1000)
         let params = PythonObject(["timestamp": timestamp])
 
         let pySymbol = PythonObject(symbol)
         let pySince = PythonObject(since)
-        let pyTimeframe = PythonObject(timeframe)
+        let pyTimeframe = PythonObject(interval)
         let pyLimit = PythonObject(limit)
         
         let exchangeResponse = exchange.fetchOHLCV(symbol: pySymbol, timeframe: pyTimeframe, since: pySince, limit: pyLimit, params: params)
