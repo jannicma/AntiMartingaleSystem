@@ -25,16 +25,29 @@ public class BingxApiController {
     }
 
 
-    public func getTradeBy(symbol: String) {
+    func getTradeBy(symbol: String) -> PositionResponse? {
         let timestamp = Int(Date().timeIntervalSince1970 * 1000)
         let params = PythonObject(["timestamp": timestamp])
         let pySymbol = PythonObject([symbol])
 
-        print("Fetching positions for:", pySymbol)
-
         let positions = exchange.fetchPositions(pySymbol, params)
-        
-        print("Positions received:", positions)
+
+        do {
+            let jsonString = Python.import("json").dumps(positions)
+
+            // Convert JSON string to Data
+            if let jsonData = jsonString.description.data(using: .utf8) {
+                // Decode into Swift struct
+                let decodedPositions = try JSONDecoder().decode([PositionResponse].self, from: jsonData)
+                return decodedPositions.first
+            } else {
+                print("Failed to convert JSON string to Data: getTradeBy")
+            }
+        } catch {
+            print("error on getTradeBy(symbol): Error: \(error)")
+        }
+
+        return nil
     }
 
 
