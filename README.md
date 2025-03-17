@@ -15,7 +15,7 @@ Idea of code:
 
 - create exchagne object
 
-- input first trade ID
+- input symbol
 - input VWAP starting time (1m precise)
 
 - get trade direction, (total)amount, (average)price
