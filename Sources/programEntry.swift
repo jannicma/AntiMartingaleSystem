@@ -27,8 +27,11 @@ struct Main {
             return
         }
         
-        let martingaleActor = MartingaleActor()
-        _ = await martingaleActor.startSystem(symbol: symbol, vwapStartTime: vwapStartTime)
+        let martingaleActor = MartingaleSystem()
+        martingaleActor.start(symbol: symbol, vwapStartTime: vwapStartTime)
+
+        print("test")
+        let aaa = readLine()
     }
 }
 
