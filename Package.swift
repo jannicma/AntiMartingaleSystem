@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "AntiMartingaleSystem",
+    platforms: [
+        .macOS(.v13)
+    ],
     dependencies: [
         .package(url: "https://github.com/pvieito/PythonKit.git", from: "0.0.1")
     ],
