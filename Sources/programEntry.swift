@@ -16,7 +16,7 @@ struct Main {
         
         // Get date input from user
         print("Enter VWAP start time (yyyy-MM-dd HH:mm:ss): ", terminator: "")
-        let defaultDateString = "2025-03-17 14:10:00"
+        let defaultDateString = "2025-03-31 23:10:00"
         let dateInput = readLine()
         let dateString = (dateInput != nil && !dateInput!.isEmpty) ? dateInput! : defaultDateString
         
@@ -27,8 +27,8 @@ struct Main {
             return
         }
         
-        let martingaleActor = MartingaleSystem()
-        martingaleActor.start(symbol: symbol, vwapStartTime: vwapStartTime)
+        let martingaleSystem = MartingaleSystem()
+        await martingaleSystem.start(symbol: symbol, vwapStartTime: vwapStartTime)
 
         print("test")
         let aaa = readLine()

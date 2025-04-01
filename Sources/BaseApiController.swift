@@ -1,42 +1,64 @@
 import Foundation
 import CryptoKit
 
-class BaseApiController {
+actor BaseApiController {
     private var apiKey: String
     private var apiSecret: String
-    private var baseUrl: String
-    
+    let baseURL = "https://open-api.bingx.com"
+
     init(baseUrl: String) {
         self.apiKey = ProcessInfo.processInfo.environment["BINGX_API_KEY"] ?? ""
         self.apiSecret = ProcessInfo.processInfo.environment["BINGX_API_SECRET"] ?? ""
-        self.baseUrl = baseUrl
     }
     
-    public func request<T: Decodable>(endpoint: String, body: String, method: String = "GET") async throws -> T {
-        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-        var query = body.isEmpty ? "timestamp=\(timestamp)" : "\(body)&timestamp=\(timestamp)"
-        let signature = sign(query: query)
-        query += "&signature=\(signature)"
+    func sendRequest(endpoint: String, method: String, parameters: [String: String], isPrivate: Bool) async throws -> Data {
+        var params = parameters
+        params["timestamp"] = String(Int(Date().timeIntervalSince1970 * 1000))
         
-        guard let url = URL(string: "\(baseUrl)\(endpoint)?\(query)") else {
-            throw NSError(domain: "BaseApiController", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+        if isPrivate {
+            let signature = generateSignature(parameters: params)
+            params["signature"] = signature
         }
-
+        
+        let urlString = baseURL + endpoint
+        guard var urlComponents = URLComponents(string: urlString) else {
+            throw URLError(.badURL)
+        }
+        
+        if method.uppercased() == "GET" {
+            urlComponents.queryItems = params.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        
+        guard let url = urlComponents.url else {
+            throw URLError(.badURL)
+        }
+        
         var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.addValue(apiKey, forHTTPHeaderField: "X-BX-APIKEY")
-        if method != "GET" {
-            request.httpBody = body.data(using: .utf8)
+        request.httpMethod = method.uppercased()
+        
+        if isPrivate {
+            request.addValue(apiKey, forHTTPHeaderField: "X-BX-APIKEY")
         }
-
+        
+        if method.uppercased() == "POST" {
+            request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            let bodyString = params.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+            request.httpBody = bodyString.data(using: .utf8)
+        }
+        
         let (data, _) = try await URLSession.shared.data(for: request)
-        return try JSONDecoder().decode(T.self, from: data)
+        return data
     }
     
-    private func sign(query: String) -> String {
-        let key = SymmetricKey(data: Data(apiSecret.utf8))
-        let signatureData = HMAC<SHA256>.authenticationCode(for: Data(query.utf8), using: key)
-        let signature = signatureData.map { String(format: "%02x", $0) }.joined()
-        return signature
+    
+    private func generateSignature(parameters: [String: String]) -> String {
+        let sortedKeys = parameters.keys.sorted()
+        let paramString = sortedKeys.map { key in
+            "\(key)=\(parameters[key]!)"
+        }.joined(separator: "&")
+        let data = Data(paramString.utf8)
+        let keyData = Data(apiSecret.utf8)
+        let hmac = HMAC<SHA256>.authenticationCode(for: data, using: SymmetricKey(data: keyData))
+        return Data(hmac).map { String(format: "%02hhx", $0) }.joined()
     }
 }
