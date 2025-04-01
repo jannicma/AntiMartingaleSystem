@@ -8,3 +8,4 @@ DerivedData/
 .netrc
 /python_env
 /tmp
+.swiftpm/xcode/xcshareddata/xcschemes/AntiMartingaleSystem.xcscheme
