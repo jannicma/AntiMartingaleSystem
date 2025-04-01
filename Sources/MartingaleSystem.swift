@@ -59,6 +59,7 @@ actor MartingaleSystem {
         var nextVWAPLevel = 0.0
         do {
             let candles = try await bingxApi.getKline(symbol: symbol, interval: "1m", startTime: vwapStartTimestamp, limit: 1000)
+            let trade = try await bingxApi.getTrades(for: symbol)
 
         }
         catch {

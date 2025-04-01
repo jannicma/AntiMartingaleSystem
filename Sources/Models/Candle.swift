@@ -8,14 +8,6 @@ public struct Candle: Codable, Sendable {
     let close: Decimal
     let volume: Decimal
     
-    init(time: Int, open: Decimal, high: Decimal, low: Decimal, close: Decimal, volume: Decimal) {
-        self.time = time
-        self.open = open
-        self.high = high
-        self.low = low
-        self.close = close
-        self.volume = volume
-    }
     
     init(stringCandle: StringCandle) {
         let zero: Decimal = 0.0

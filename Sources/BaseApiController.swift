@@ -12,12 +12,11 @@ actor BaseApiController {
     }
     
     func sendRequest(endpoint: String, method: String, parameters: [String: String], isPrivate: Bool) async throws -> Data {
-        var params = parameters
-        params["timestamp"] = String(Int(Date().timeIntervalSince1970 * 1000))
+        var params = parseParams(parameters: parameters)
         
         if isPrivate {
-            let signature = generateSignature(parameters: params)
-            params["signature"] = signature
+            let signature = generateSignature(paramString: params)
+            params += "&signature=\(signature)"
         }
         
         let urlString = baseURL + endpoint
@@ -26,7 +25,7 @@ actor BaseApiController {
         }
         
         if method.uppercased() == "GET" {
-            urlComponents.queryItems = params.map { URLQueryItem(name: $0.key, value: $0.value) }
+            urlComponents.query = params
         }
         
         guard let url = urlComponents.url else {
@@ -42,7 +41,7 @@ actor BaseApiController {
         
         if method.uppercased() == "POST" {
             request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-            let bodyString = params.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+            let bodyString = params
             request.httpBody = bodyString.data(using: .utf8)
         }
         
@@ -50,12 +49,19 @@ actor BaseApiController {
         return data
     }
     
-    
-    private func generateSignature(parameters: [String: String]) -> String {
+    private func parseParams(parameters: [String: String]) -> String {
         let sortedKeys = parameters.keys.sorted()
-        let paramString = sortedKeys.map { key in
+        var paramString = sortedKeys.map { key in
             "\(key)=\(parameters[key]!)"
         }.joined(separator: "&")
+        
+        if paramString.count > 0 { paramString += "&" }
+        paramString += "timestamp=" + String(Int(Date().timeIntervalSince1970 * 1000))
+        
+        return paramString
+    }
+    
+    private func generateSignature(paramString: String) -> String {
         let data = Data(paramString.utf8)
         let keyData = Data(apiSecret.utf8)
         let hmac = HMAC<SHA256>.authenticationCode(for: data, using: SymmetricKey(data: keyData))
