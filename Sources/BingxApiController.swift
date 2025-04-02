@@ -33,7 +33,8 @@ public actor BingxApiController {
         }
     }
     
-    public func getTrades(for symbol: String) async throws -> String {
+    
+    public func getTrades(for symbol: String) async throws -> Position {
         let endpoint = "/openApi/swap/v2/user/positions"
         let params: [String: String] = [
             "symbol": symbol,
@@ -41,8 +42,22 @@ public actor BingxApiController {
         
         let apiResponse = try await baseApiController.sendRequest(endpoint: endpoint, method: "GET", parameters: params, isPrivate: true)
         let decoder = JSONDecoder()
-        // please parse the object into a trade model.
-        return ""
+
+        let response = try decoder.decode(PositionResponse.self, from: apiResponse)
+        if response.code == 0 {
+            if let stringPositions = response.data {
+                guard stringPositions.count == 1 else {
+                    throw NSError(domain: "API Error", code: 0, userInfo: ["message": "Unexpected amount of Positions"])
+                }
+                let position = Position(stringPosition: stringPositions[0])
+                return position
+            } else {
+                throw NSError(domain: "API Error", code: 0, userInfo: ["message": "Data is missing in response"])
+            }
+        } else {
+            let errorMessage = response.msg ?? "Unknown error"
+            throw NSError(domain: "API Error", code: response.code, userInfo: ["message": errorMessage])
+        }
     }
 }
 
