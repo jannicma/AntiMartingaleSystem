@@ -5,17 +5,13 @@ actor MartingaleSystem {
     private var bingxApi: BingxApiController?
     private let indicatorCalculator = IndicatorCalculatorController()
     
-    private var timer: DispatchSourceTimer?
-    private let timerQueue = DispatchQueue(label: "repeatingTask", qos: .background)
-    
-    
     private var symbol: String?
     private var vwapStartTimestamp: Int?
 
+    private var task: Task<Void, Never>?
     
     public func start(symbol: String, vwapStartTime: Date) async {
-        // Prevent starting multiple timers
-        guard timer == nil else {
+        guard task == nil || task?.isCancelled == true else {
             print("System is already running.")
             return
         }
@@ -25,15 +21,18 @@ actor MartingaleSystem {
         self.symbol = symbol
         self.vwapStartTimestamp = Int(vwapStartTime.timeIntervalSince1970) * 1000
         
-        await runSystem()
-        
-//        timer = DispatchSource.makeTimerSource(queue: timerQueue)
-//        timer?.schedule(deadline: .now(), repeating: 5.0, leeway: .milliseconds(500))
-//        timer?.setEventHandler { [weak self] in
-//            await self?.runSystem() // Asynchronous function
-//        }
-//        timer?.resume()
-        print("System running...")
+        task = Task {
+            while !Task.isCancelled {
+                await runSystem()
+                try? await Task.sleep(nanoseconds: 30 * 1_000_000_000) // 30 seconds
+            }
+        }
+    }
+    
+    
+    public func stop() {
+        task?.cancel()
+        print("System stopped.")
     }
 
     
@@ -53,9 +52,7 @@ actor MartingaleSystem {
             print("Error: No vwapStartTimestamp specified.")
             return
         }
-        
-        print("another run...")
-        
+                
         var nextVWAPLevel: Decimal = 0.0
         do {
             let position = try await bingxApi.getTrades(for: symbol)
@@ -103,10 +100,4 @@ actor MartingaleSystem {
         }
     }
     
-    
-    public func stop() {
-        timer?.cancel()
-        timer = nil
-        print("System stopped.")
-    }
 }

@@ -5,9 +5,7 @@ import Foundation
 
 @main
 struct Main {
-    static func main() async {
-        print("Start...")
-        
+    static func main() async {        
         // Get symbol input from user
         print("Enter trading symbol (e.g., BTC-USDT): ", terminator: "")
         let defaultSymbol = "BTC-USDT"
@@ -30,7 +28,6 @@ struct Main {
         let martingaleSystem = MartingaleSystem()
         await martingaleSystem.start(symbol: symbol, vwapStartTime: vwapStartTime)
 
-        print("test")
         let aaa = readLine()
     }
 }
