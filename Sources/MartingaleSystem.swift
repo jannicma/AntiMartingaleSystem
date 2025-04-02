@@ -56,57 +56,51 @@ actor MartingaleSystem {
         
         print("another run...")
         
-        var nextVWAPLevel = 0.0
+        var nextVWAPLevel: Decimal = 0.0
         do {
-            let candles = try await bingxApi.getKline(symbol: symbol, interval: "1m", startTime: vwapStartTimestamp, limit: 1000)
-            let trade = try await bingxApi.getTrades(for: symbol)
+            let position = try await bingxApi.getTrades(for: symbol)
+            
+            let avgPrice = position.avgPrice
+            let posAmount = position.positionAmt
+            let isLong = position.positionSide == "LONG"
+            let positionId = position.positionId
+            
+            
+            // calculate lowest possible timeframe to get all data (max 1000)
+            let currentTimestamp: Int = Int(Date().timeIntervalSince1970 * 1000)
+            let minutesSinceStart: Int = (currentTimestamp - vwapStartTimestamp) / 1000 / 60
+    
+            let minInterval: String = {
+                switch minutesSinceStart {
+                case ..<1000:
+                    return "1m"
+                case ..<5000:
+                    return "5m"
+                case ..<15000:
+                    return "15m"
+                default:
+                    return "30m"
+                }
+            }()
+            
+            let candlesMinInterval: [Candle] = try await bingxApi.getKline(symbol: symbol, interval: minInterval, startTime: vwapStartTimestamp)
+            let atr5mCandles = minInterval == "5m" ? candlesMinInterval : try await bingxApi.getKline(symbol: symbol, interval: "5m", limit: 20)
+
+            let currPrice = candlesMinInterval.last!.close
+            let atr = indicatorCalculator.calculateAtr(for: atr5mCandles)
+            nextVWAPLevel = avgPrice - (isLong ? atr : -atr)
+
+            let vwap = indicatorCalculator.calculateVWAP(candles: candlesMinInterval)
+
+            if (isLong ? vwap > nextVWAPLevel : vwap < nextVWAPLevel) {
+                let addingAmount = ((avgPrice * posAmount) - (vwap * posAmount)) / (vwap - currPrice)
+                print("\(Date()): enter at \(currPrice) with volume \(addingAmount)")
+            }
 
         }
         catch {
             print("Error: \(error)")
         }
-            
-//        let trade = bingxApi.getTradeBy(symbol: symbol)
-//        guard let trade = trade else {
-//            print("Error fetching trade data.")
-//            return
-//        }
-//
-//        let avgPrice = Double(trade.info.avgPrice)!
-//        let posAmount = Double(trade.info.positionAmt)!
-//        let isLong = trade.info.positionSide == "LONG"
-//        let positionId = trade.info.positionId
-//
-//        // calculate lowest possible timeframe to get all data (max 1000)
-//        let currentTimestamp: Int = Int(Date().timeIntervalSince1970 * 1000)
-//        let minutesSinceStart: Int = (currentTimestamp - vwapStartTimestamp) / 1000 / 60
-//
-//        let minInterval: String = {
-//            switch minutesSinceStart {
-//            case ..<1000:
-//                return "1m"
-//            case ..<5000:
-//                return "5m"
-//            case ..<15000:
-//                return "15m"
-//            default:
-//                return "30m"
-//            }
-//        }()
-//
-//        let candlesMinInterval: [Candle] = bingxApi.getCandles(symbol: symbol, since: vwapStartTimestamp, interval: minInterval)
-//        let atr5mCandles = minInterval == "5m" ? candlesMinInterval : bingxApi.getCandles(symbol: symbol, limit: 20, interval: "5m")
-//        let currPrice = candlesMinInterval.last!.close
-//        let atr = indicatorCalculator.calculateAtr(for: atr5mCandles)
-//        nextVWAPLevel = avgPrice - (isLong ? atr : -atr)
-//
-//        let vwap = indicatorCalculator.calculateVWAP(candles: candlesMinInterval)
-//
-//        if (isLong ? vwap > nextVWAPLevel : vwap < nextVWAPLevel) {
-//            let addingAmount = ((avgPrice * posAmount) - (vwap * posAmount)) / (vwap - currPrice)
-//            print("\(Date()): enter at \(currPrice) with volume \(addingAmount)")
-//        }
-        
     }
     
     

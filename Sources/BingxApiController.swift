@@ -8,14 +8,15 @@ public actor BingxApiController {
         self.baseApiController = BaseApiController(baseUrl: baseApiUrl)
     }
     
-    public func getKline(symbol: String, interval: String, startTime: Int, limit: Int = 1000) async throws -> [Candle] {
+    public func getKline(symbol: String, interval: String, startTime: Int? = nil, limit: Int? = nil) async throws -> [Candle] {
         let endpoint = "/openApi/swap/v3/quote/klines"
-        let params: [String: String] = [
+        var params: [String: String] = [
             "symbol": symbol,
             "interval": interval,
-            "startTime": String(startTime),
-            "limit": String(limit),
         ]
+        
+        if startTime != nil { params["startTime"] = String(startTime!) }
+        if limit != nil { params["limit"] = String(limit!) }
 
         let apiResponse = try await baseApiController.sendRequest(endpoint: endpoint, method: "GET", parameters: params, isPrivate: false)
         let decoder = JSONDecoder()
