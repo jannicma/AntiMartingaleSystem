@@ -25,10 +25,24 @@ struct Main {
             return
         }
         
+        print("""
+            ------------------- Options --------------------
+            close [x] = closes the trade it scaled into
+            
+            ---  ---  ---  ---  ---  ---  ---  ---  ---  ---
+            
+            """)
+        
         let martingaleSystem = MartingaleSystem()
         await martingaleSystem.start(symbol: symbol, vwapStartTime: vwapStartTime)
 
-        let aaa = readLine()
+        while true {
+            let input = readLine() ?? ""
+            if input == "close" || input == "x" {
+                await martingaleSystem.stop()
+                break
+            }
+        }
     }
 }
 

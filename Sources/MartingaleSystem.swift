@@ -30,7 +30,7 @@ actor MartingaleSystem {
     }
     
     
-    public func stop() {
+    public func stop() async {
         task?.cancel()
         print("System stopped.")
     }
@@ -38,6 +38,7 @@ actor MartingaleSystem {
     
     
     private func runSystem() async {
+        print("running system...")
         guard let bingxApi else {
             print("Error creating API instance.")
             return
