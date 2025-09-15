@@ -60,4 +60,18 @@ public actor BingxApiController {
             throw NSError(domain: "API Error", code: response.code, userInfo: ["message": errorMessage])
         }
     }
+    
+    
+    public func placeMarketOrder(symbol: String, side: String, amount: String) async throws -> String {
+        let endpoint = "/openApi/swap/v2/order"
+        let params: [String: String] = [
+            "symbol": symbol,
+            "side": side,
+            "type": "market",
+            "amount": amount,
+        ]
+        
+        let apiResponse = try await baseApiController.sendRequest(endpoint: endpoint, method: "POST", parameters: params, isPrivate: true)
+        return ""
+    }
 }

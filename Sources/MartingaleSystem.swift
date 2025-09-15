@@ -61,7 +61,7 @@ actor MartingaleSystem {
             
             let avgPrice: Decimal = tmpAvgPrice //position.avgPrice
             let posAmount: Decimal = tmpPosAmount //position.positionAmt
-            let isLong = position.positionSide == "LONG"
+            let isLong = false //position.positionSide == "LONG"
             let positionId = position.positionId
             
             
@@ -94,9 +94,10 @@ actor MartingaleSystem {
 
             let vwap = indicatorCalculator.calculateVWAP(candles: candlesMinInterval)
 
-            if currPrice < vwap {
+            if isLong ? currPrice < vwap : currPrice > vwap {
                 await self.stop()
             }
+            
             if (isLong ? vwap > nextVwapLevel : vwap < nextVwapLevel) {
                 let addingAmount = if isLong {
                     posAmount * (vwap - avgPrice) / (currPrice - vwap)
@@ -105,12 +106,14 @@ actor MartingaleSystem {
                 }
                 
                 var roundedAmount = (addingAmount as NSDecimalNumber).doubleValue
-                roundedAmount = round(roundedAmount / 10.0) * 10.0
-                print("\(localTime()) - enter at \(currPrice) with volume \(roundedAmount)")
+                roundedAmount = round(roundedAmount * 100.0) / 100.0
                 
                 simulateEntry(average: vwap, size: Decimal(roundedAmount))
                 
                 nextVwapLevel = vwap + (isLong ? atr : -atr)
+                
+                print("\(localTime()) - enter at \(currPrice) with volume \(roundedAmount), New AVG Price: \(round((vwap as NSDecimalNumber).doubleValue * 100.0) / 100.0), Next VWAP Level: \(round((nextVwapLevel as NSDecimalNumber).doubleValue * 100.0) / 100.0)")
+
             }
 
         }
@@ -119,7 +122,7 @@ actor MartingaleSystem {
         }
     }
     
-    var tmpAvgPrice: Decimal = 82500.0
+    var tmpAvgPrice: Decimal = 82050
     var tmpPosAmount: Decimal = 1.0
     
     private func simulateEntry(average: Decimal, size: Decimal){

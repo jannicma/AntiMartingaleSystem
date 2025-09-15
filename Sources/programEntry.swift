@@ -14,7 +14,7 @@ struct Main {
         
         // Get date input from user
         print("Enter VWAP start time (yyyy-MM-dd HH:mm:ss): ", terminator: "")
-        let defaultDateString = "2025-04-03 02:04:00"
+        let defaultDateString = "2025-04-03 19:45:00"
         let dateInput = readLine()
         let dateString = (dateInput != nil && !dateInput!.isEmpty) ? dateInput! : defaultDateString
         
